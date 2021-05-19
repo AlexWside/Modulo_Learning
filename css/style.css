@@ -1,0 +1,16 @@
+*{
+    margin: 0;
+    padding: 0;
+    text-decoration: none;
+    outline: none;
+
+}
+
+form{
+    display: flex; 
+    flex-direction: row; 
+    align-items: center; 
+    max-width: 50%;
+    
+}
+   
