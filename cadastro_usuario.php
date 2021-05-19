@@ -1,10 +1,10 @@
 
-
+<!--só para fins de teste de sessão-->
 
 <!DOCTYPE html>
 <html>
 <head>
-	<title>Cadastro Usuario - N00bBook</title>
+	<title>Cadastro Usuario</title>
    <!--Made with love by Mutiullah Samim -->
    	<link href="//maxcdn.bootstrapcdn.com/bootstrap/4.1.1/css/bootstrap.min.css" rel="stylesheet" id="bootstrap-css">
 	<script src="//maxcdn.bootstrapcdn.com/bootstrap/4.1.1/js/bootstrap.min.js"></script>
