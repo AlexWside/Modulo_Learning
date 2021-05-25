@@ -1,78 +1,112 @@
 <?php
 
-require_once('controler/conexao.php');
-class Assunto{
-    
-   private $conn;
-   public function __construct ($conn){
-       $this ->conn = $conn;// passagem da conexão pelo parametro do contrutor 
-   }// fim construtor 
-   
-   public function adicionar_assunto($nome,$matricula_usuario){
-      echo $nome;
-      echo $matricula_usuario;
-      $result_usuario = "INSERT INTO assunto (nome,usuario_matricula,created) 
-      VALUES ('$nome','$matricula_usuario',now())";
-      mysqli_query($this->conn,$result_usuario);
+require_once('controler/PDO_CON.php');
+
+class Assunto
+{
+
+   private $PDO;
+
+   public function __construct($PDO)
+   {
+      $this->PDO = $PDO; // passagem da conexão pelo parametro do contrutor 
+   } // fim construtor 
+
+   public function adicionar_assunto($nome) //pdo
+   {
+      $matricula_usuario  = $_SESSION['matricula'];
+      $sql = "INSERT INTO assunto (nome,usuario_matricula,created) VALUES(:nome, :matricula,now())";
+      $stmt = $this->PDO->prepare($sql);
+      $stmt->bindParam(':nome', $nome);
+      $stmt->bindParam(':matricula', $matricula_usuario);
+
+      $result = $stmt->execute();
+
+      if (!$result) {
+         var_dump($stmt->errorInfo());
+         exit;
+      }
       header('Location:home');
-   }// fim funçõo adicionar registro
+   } // fim funçõo adicionar registro
 
 
-   public function buscar_assunto(){  
-       $result_usuario = "SELECT * FROM assunto ";
-       $result_bd = $this->conn->query($result_usuario);
-       $array=array();
-       while( $lista = mysqli_fetch_assoc($result_bd) ){
-          $array[] = $lista;
-       }
-       return $array;
-      //header('Location:novo_registro.php');
-   }// fim funçõo Buscar Todos
+   public function buscar_assunto() //pdo
+   {
+
+      $sql = "SELECT * FROM assunto ";
+      $result = $this->PDO->query($sql);
+      $rows = $result->fetchAll();
+      return $rows;
+   } // fim funçõo Buscar Todos
 
 
-   public function desativar_assunto($parametro,$url){
-      $result_usuario = "UPDATE arquivos SET status = '1' where  id = '$parametro'";
-      // UPDATE `arquivos` SET `status` = '0' WHERE `arquivos`.`id` = 94;
-      mysqli_query($this->conn,$result_usuario);
-      header("Location:$url");
-     }// fim funçõo desativar assunto
+   public function desativar_assunto($id, $url) //pdo
+   {
+      $sql = "UPDATE assunto SET status = '1' where  id = :id";
 
-   public function ativar_assunto($parametro,$url){
-      $result_usuario = "UPDATE arquivos SET status = '0' where  id = '$parametro'";
-      mysqli_query($this->conn,$result_usuario);
-      header("Location:$url");
-   }// fim funçõo ativar assunto
+      $stmt = $this->PDO->prepare($sql);
+      $stmt->bindParam(':id', $id);
+      $result = $stmt->execute();
+      if (!$result) {
+         var_dump($stmt->errorInfo());
+         exit;
+      }
+   } // fim funçõo desativar assunto
+
+   public function ativar_assunto($id, $url) //pdo
+   {
+      $sql = "UPDATE assunto SET status = '0' where  id = :id";
+
+      $stmt = $this->PDO->prepare($sql);
+      $stmt->bindParam(':id', $id);
+      $result = $stmt->execute();
+      if (!$result) {
+         var_dump($stmt->errorInfo());
+         exit;
+      }
+   } // fim funçõo ativar assunto
 
 
-  public function buscar_usuario_assunto(){   
+   public function buscar_usuario_assunto() //pdo
+   {
+
       $matricula = $_SESSION['matricula'];
-      $result_usuario = "SELECT DISTINCT a.assunto 
-      FROM arquivos a,permissao_video b WHERE a.id = b.id_video and b.matricula = '$matricula' and a.status = 0";
-      //SELECT DISTINCT a.assunto, a.status FROM `arquivos` a,`permissao_video` b WHERE a.id = b.id_video and b.matricula = 'mattst'
-      $result_bd = $this->conn->query($result_usuario);
 
-      $array=array();
-         while( $lista = mysqli_fetch_assoc($result_bd) ){
-            $array[] = $lista;
-         }
-         return $array;
-   }// fim funçõo Buscar Todos
+      $sql = "SELECT DISTINCT a.assunto 
+      FROM arquivos a,permissao_video b 
+      WHERE a.id = b.id_video and b.matricula = '" . $matricula . "' and a.status = 0";
+
+      $result = $this->PDO->query($sql);
+      $rows = $result->fetchAll();
+      return $rows;
+   } // fim funçõo Buscar Todos
+
+   public function buscar_usuario_assunto_coint($assunto) //pdo
+   {
+
+      $matricula = $_SESSION['matricula'];
+
+      $sql = "SELECT a.assunto 
+      FROM arquivos a,permissao_video b 
+      WHERE a.id = b.id_video and b.matricula = '" . $matricula . "' and a.status = 0 and a.assunto = '" . $assunto . "'";
+
+      $result = $this->PDO->query($sql);
+      $rows = $result->fetchAll();
+      return count($rows);
+   } // contador para fins futeis
+
+   public function buscar_assunto_id($id) //pdo
+   {
+      $sql = "SELECT * FROM assunto where id = '" . $id . "' ";
+
+      $result = $this->PDO->query($sql);
+      $rows = $result->fetch();
+      return $rows;
+   } // fim funçõo Buscar nome usuario pela matricula
 
 
 
-  public function buscar_assunto_id($id){
-      $result_usuario = "SELECT * FROM assunto where id = '$id' ";
-      $result_bd = $this->conn->query($result_usuario);
-      $lista = mysqli_fetch_assoc($result_bd);
-      return $lista;
-  }// fim funçõo Buscar nome usuario pela matricula
 
+} //fim da classe
 
-
-
-}//fim da classe
-
-   $Assunto = new Assunto($conn);
-   
-
-?>
+$Assunto = new Assunto($PDO);//instancia o objeto assunto

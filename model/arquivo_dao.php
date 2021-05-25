@@ -1,54 +1,102 @@
 <?php
 
-require_once('controler/conexao.php');
+require_once('controler/PDO_CON.php');
+
+class Arquivo
+{
+
+   private $PDO;
+
+   public function __construct($PDO)
+   {
+
+      $this->PDO = $PDO; // passagem da conexão pelo parametro do contrutor 
+   } // fim construtor 
 
 
-class Arquivo{
-   
-    private $conn;
+   public function adicionar_video($nome, $diretorio, $descricao, $titulo, $assunto, $tipo, $subtipo, $tempo) // pdo
+   {
+      $matricula_usuario = $_SESSION['matricula'];
+      $setor = $_SESSION['set_usuario'];
 
+      $sql = "INSERT INTO arquivos 
+      (nome,diretorio,descricao,matricula_usuario,
+      set_usuario,titulo,assunto,tipo,subtipo,tempo)
+      VALUES(:nome, :diretorio, :descricao, :matricula_usuario,
+      :set_usuario, :titulo, :assunto, :tipo, :subtipo, :tempo)";
+      $stmt = $this->PDO->prepare($sql);
+      $stmt->bindParam(':nome', $nome);
+      $stmt->bindParam(':diretorio', $diretorio);
+      $stmt->bindParam(':descricao', $descricao);
+      $stmt->bindParam(':matricula_usuario', $matricula_usuario);
+      $stmt->bindParam(':set_usuario', $setor);
+      $stmt->bindParam(':titulo', $titulo);
+      $stmt->bindParam(':assunto', $assunto);
+      $stmt->bindParam(':tipo', $tipo);
+      $stmt->bindParam(':subtipo', $subtipo);
+      $stmt->bindParam(':tempo', $tempo);
+      $result = $stmt->execute();
 
-    public function __construct ($conn){
-       $this ->conn = $conn;// passagem da conexão pelo parametro do contrutor 
-   }// fim construtor 
-   
-
-   public function adicionar_video($nome,$diretorio,$descricao,$matricula_usuario,$setor,$titulo,$assunto,$tipo,$subtipo,$tempo){
-       $this ->nome = $nome;
-       $this ->diretorio = $diretorio;
-       $result_usuario = "INSERT INTO arquivos 
-       (nome,diretorio,descricao,matricula_usuario,set_usuario,titulo,assunto,tipo,subtipo,tempo) 
-       VALUES ('$nome','$diretorio','$descricao','$matricula_usuario','$setor','$titulo','$assunto','$tipo','$subtipo','$tempo')";
-       mysqli_query($this->conn,$result_usuario);
-   
+      if (!$result) {
+         var_dump($stmt->errorInfo());
+         exit;
+      }
       header('Location:home');
-   }// fim funçõo adicionar registro
+   } // fim funçõo adicionar registro
 
 
-   public function adicionar_permissao($matricula,$id_video){
-      
-      $result_usuario = "INSERT INTO permissao_video (matricula,id_video) VALUES ('$matricula','$id_video')";
-      mysqli_query($this->conn,$result_usuario);
-   }// fim funçõo adicionar permissao video
+   public function adicionar_permissao($matricula, $id_video) //pdo
+   {
+      $sql = "INSERT INTO permissao_video (matricula,id_video) VALUES(:matricula, :id_video)";
+      $stmt = $this->PDO->prepare($sql);
+      $stmt->bindParam(':matricula', $matricula);
+      $stmt->bindParam(':id_video', $id_video);
 
-   public function buscar_permissao($id_video){
-   $result_usuario = "SELECT * FROM permissao_video where id_video = '$id_video'";
-    $result_bd = $this->conn->query($result_usuario);
-    $lista = mysqli_fetch_all($result_bd);
-    return $lista;
-   }// fim funçõo buscar permissao videoi
+      $result = $stmt->execute();
+
+      if (!$result) {
+         var_dump($stmt->errorInfo());
+         exit;
+      }
+   } // fim funçõo adicionar permissao video
+
+   public function buscar_permissao($id_video) //pdo
+   {
+      $sql = "SELECT * FROM permissao_video where id_video = '" . $id_video . "'";
+      $result = $this->PDO->query($sql);
+      $rows = $result->fetchAll();
+      return $rows;
+   } // fim funçõo buscar permissao videoi
+
+   function buscar_usuario_permissao($id_video, $matricula){
+      $sql = "SELECT * FROM permissao_video where id_video = '" . $id_video . "' and matricula = '".$matricula."'";
+      $result = $this->PDO->query($sql);
+      $rows = $result->fetch();
+      //echo "<pre>"; print_r($rows); exit;
+      return $rows;
+   }
 
 
-   public function apagar_permissao($parametro){
-      $result_usuario = "DELETE FROM permissao_video WHERE id = '$parametro'";
-      mysqli_query($this->conn,$result_usuario);
-   }// fim funçõo apagar permissao video 
+   public function apagar_permissao($parametro) //pdo
+   {
+      $sql = "DELETE FROM permissao_video WHERE id = :id";
+      $stmt = $this->PDO->prepare($sql);
+      $stmt->bindParam(':id', $parametro);
+
+      $result = $stmt->execute();
+
+      if (!$result) {
+         var_dump($stmt->errorInfo());
+         exit;
+      }
+   } // fim funçõo apagar permissao video 
 
 
 
-   public function adicionar_edicao($video){ 
+   public function adicionar_edicao($video) //pdo
+   {
       $id_curso   = $video['id_curso'];
-      $titulo     = mysqli_real_escape_string($this->conn,$video['titulo']);
+      $titulo     = $video['titulo'];
       $assunto    = $video['assunto'];
       $tipo       = $video['tipo'];
       $subtipo    = $video['subtipo'];
@@ -57,82 +105,107 @@ class Arquivo{
       $matricula_usuario = $_SESSION['matricula'];
       $set_usuario = $_SESSION['set_usuario'];
 
-      $result_usuario = "UPDATE arquivos SET 
-                              descricao = '$descricao' , 
-                              matricula_usuario = '$matricula_usuario' , 
-                              set_usuario = '$set_usuario', 
-                              titulo= '$titulo' , 
-                              assunto= '$assunto',
-                              tipo = '$tipo',
-                              subtipo='$subtipo',
-                              tempo = '$tempo' 
-                           WHERE id = '$id_curso' ";
+      $sql = "UPDATE arquivos set 
+      descricao = :descricao,
+      matricula_usuario = :matricula,
+      set_usuario = :set_usuario,
+      titulo = :titulo,
+      assunto = :assunto,
+      tipo = :tipo,
+      subtipo = :subtipo,
+      tempo = :tempo
+      WHERE id = :id";
+      $stmt = $this->PDO->prepare($sql);
+      $stmt->bindParam(':id', $id_curso);
+      $stmt->bindParam(':titulo', $titulo);
+      $stmt->bindParam(':assunto', $assunto);
+      $stmt->bindParam(':tipo', $tipo);
+      $stmt->bindParam(':subtipo', $subtipo);
+      $stmt->bindParam(':tempo', $tempo);
+      $stmt->bindParam(':descricao', $descricao);
+      $stmt->bindParam(':matricula', $matricula_usuario);
+      $stmt->bindParam(':set_usuario', $set_usuario);
 
- 
+      $result = $stmt->execute();
 
-     if(mysqli_query($this->conn,$result_usuario)){
-        return true;
-     }else{
-        return false;
-     }
-   }// fim funçõo adicionar edicao
+      if (!$result) {
+         var_dump($stmt->errorInfo());
+         exit;
+      }
 
-
-
-   public function buscar_video(){      
-       $result_usuario = "SELECT * FROM arquivos ";
-       $result_bd = $this->conn->query($result_usuario);
-       $lista = mysqli_fetch_all($result_bd);
-       return $lista;
-   }// fim funçõo Buscar Todos
-
-
-
-
-   public function buscar_video_usuario($parametro){ 
-      $result_usuario = "SELECT * FROM arquivos where matricula_usuario = '$parametro'";
-      $result_bd = $this->conn->query($result_usuario);
-      $lista = mysqli_fetch_all($result_bd);
-      return $lista;
-   }// fim funçõo Busca por usuario
+      return true;
+   } // fim funçõo adicionar edicao
 
 
 
-   public function apagar_arquivo($parametro,$url){
-    $result_usuario = "DELETE FROM arquivos WHERE id = '$parametro'";
-   mysqli_query($this->conn,$result_usuario);
-   header("Location:$url");
-   }// fim funçõo Buscar Por Titulo
+   public function buscar_video() // pdo
+   {
+
+      $sql = "SELECT * FROM arquivos ";
+      $result = $this->PDO->query($sql);
+      $rows = $result->fetchAll();
+      return $rows;
+   } // fim funçõo Buscar Todos 
 
 
 
-   public function desativar_curso($parametro,$url){
-      $result_usuario = "UPDATE arquivos SET status = '1' where  id = '$parametro'";
-     mysqli_query($this->conn,$result_usuario);
-     header("Location:$url");
-   }// fim funçõo desativar curso 
+
+   public function buscar_video_usuario($matricula) // pdo
+   {
+
+      $sql = "SELECT * FROM arquivos WHERE matricula_usuario = '" . $matricula . "'";
+      $result = $this->PDO->query($sql);
+      $rows = $result->fetchAll();
+      return $rows;
+   } // fim funçõo Busca por usuario
 
 
 
-   public function ativar_curso($parametro,$url){
-      $result_usuario = "UPDATE arquivos SET status = '0' where  id = '$parametro'";
-     mysqli_query($this->conn,$result_usuario);
-     header("Location:$url");
-   }// fim funçõo ativar curso
+
+   public function desativar_curso($id, $url) //pdo
+   {
+      $sql = "UPDATE arquivos SET status = '1' where  id = :id";
+
+      $stmt = $this->PDO->prepare($sql);
+      $stmt->bindParam(':id', $id);
+      $result = $stmt->execute();
+      if (!$result) {
+         var_dump($stmt->errorInfo());
+         exit;
+      }
+
+      header("Location:$url");
+   } // fim funçõo desativar curso 
 
 
 
-   public function buscar_video_id($parametro){   
-    $result_usuario = "SELECT * FROM arquivos where id = '$parametro'";
-    $result_bd = $this->conn->query($result_usuario);
-    $lista = mysqli_fetch_assoc($result_bd);
-    return $lista;
-   }// fim funçõo Buscar video id
+   public function ativar_curso($id, $url) //pdo
+   {
+      $sql = "UPDATE arquivos SET status = '0' where  id = :id";
+
+      $stmt = $this->PDO->prepare($sql);
+      $stmt->bindParam(':id', $id);
+      $result = $stmt->execute();
+      if (!$result) {
+         var_dump($stmt->errorInfo());
+         exit;
+      }
+
+      header("Location:$url");
+   } // fim funçõo ativar curso
 
 
-}//fim da classe
 
-   $arquivo = new Arquivo($conn); // extanciando objeto da classe 
-   
+   public function buscar_video_id($id) //pdo
+   {
+      $sql = "SELECT * FROM arquivos where id = '" . $id . "'";
+      $result = $this->PDO->query($sql);
+      $rows = $result->fetch();
 
-?>
+      return $rows;
+   } // fim funçõo Buscar video id
+
+
+} //fim da classe
+
+$arquivo = new Arquivo($PDO); // extanciando objeto da classe 

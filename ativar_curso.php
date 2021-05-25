@@ -1,6 +1,7 @@
 <?php
 session_start();
 require_once("model/arquivo_dao.php");
-$arquivo->ativar_curso($_POST['id'],$_POST['url']);
-
-?>
+if (!isset($_SESSION['matricula'])) {
+    die('Sem sessao! Favor logar novamente.');
+}
+$arquivo->ativar_curso($_POST['id'], $_POST['url']);

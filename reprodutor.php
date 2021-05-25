@@ -1,10 +1,19 @@
 <?php
- session_start();
- require_once('autentica_sessao.php');
+session_start();
+require_once('autentica_sessao.php');
 
- ?>
+require_once("model/arquivo_dao.php");
+require_once("model/usuario_dao.php");
+
+
+$idcurso = $_POST['id_curso'];
+
+$video = $arquivo->buscar_video_id($idcurso);
+
+?>
 <!DOCTYPE html>
 <html lang="pt-br">
+
 <head>
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
@@ -12,7 +21,7 @@
     <link rel="shortcut icon" href="img/logo-unimed.png" type="image/x-icon">
     <!-- Font google -->
     <link rel="preconnect" href="https://fonts.gstatic.com">
-    <link href="https://fonts.googleapis.com/css2?family=Poppins&display=swap" rel="stylesheet">  
+    <link href="https://fonts.googleapis.com/css2?family=Poppins&display=swap" rel="stylesheet">
     <!-- CSS only -->
     <script src="https://kit.fontawesome.com/f1745b5607.js" crossorigin="anonymous"></script>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-eOJMYsd53ii+scO/bJGFsiCZc+5NDVN2yr8+0RDqr0Ql0h+rP48ckxlpbzKgwra6" crossorigin="anonymous">
@@ -26,100 +35,123 @@
 
     <title>Reprodutor</title>
     <style>
-    body{
-        background-color:#FFF;
-        font-family: 'Poppins', sans-serif;
-    }
-    .btn{
-       
-        border-radius: 30px;
+        body {
+            background-color: #FFF;
+            font-family: 'Poppins', sans-serif;
+        }
+
+        .btn {
+
+            border-radius: 30px;
+
+            border: none;
+            background-color: #008000;
+            color: #FFF;
+            width: 10em;
+            height: 3em;
+
+        }
+
+        #idSubmit:hover {
+            color: #FFF;
+            background: #3CB371;
+
+        }
+
+        video {
+            border-style: solid;
+            border-radius: 10px;
+            border-color: white;
+            background-color: black;
+            margin: 3.5% 0;
+            box-shadow: 10px 5px 15px black;
+
+        }
         
-        border: none;
-        background-color:#008000;
-        color:#FFF;
-        width:10em;
-        height:3em;
+        @media only screen and (min-height: 800px){
+            video{
+                margin: 7.5% 0;
+            }
+
+        }
         
-    }
-    #idSubmit:hover{
-        color:#FFF;
-        background:#3CB371;
+
+        .container-video {
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            outline: none;
+            background-image: url('img/bg2.jpg');
+        }
+
+        #noContextMenu {
+            position: relative;
+            border: 5px solid black;
+            overflow: hidden;
+            outline: none;
+
+        }
+
         
-    }
-    video{
-        border-style: solid;
-        border-size:1em;
-        border-radius:10px;
-        border-color:white;
-        background-color:black;
-        margin:2em 0;
-        box-shadow: 10px 5px 15px black;
-        
-    }
-    .container-video{
-        width:100%;
-       
-        display: flex;
-        justify-content:center;
-        overline:none;
-        background-image: url('img/bg2.jpg');
-        
-    }
     </style>
 
 </head>
+
 <body>
-<?php
-
-require_once("model/arquivo_dao.php");
-$video = $arquivo->buscar_video_id($_POST['id_curso']);
-
-?>
-<div class="container-video">
+    <div class="container-video">
 
 
 
-    <video width="800" height="500" controls autoplay controlsList="nodownload" >
-    <source src="<?=$video['diretorio']?>" >
-    
-    Navegador incompativel.
-    </video>
-    
-   
-</div>
-<button style="background-color:red; margin:0.5%;"  class="btn">
-<a style="color:#FFF; text-decoration:none;" href="home"><i class="fas fa-arrow-circle-left"></i> Voltar</a>
-</button>
+        <video id="noContextMenu" width="800" height="500" controls autoplay controlsList="nodownload">
+            <source src="<?= $video['diretorio'] ?>">
+
+            Navegador incompativel.
+        </video>
 
 
-<?php // tag para buscar se usuario já concluiu o curso
-require_once("model/usuario_dao.php");
-$conclusao = $usuario->buscar_conclusao($_SESSION['matricula'],$video['id']);
-    if($conclusao != null){                
-?>
-     <div style="color:green;float:right;margin:1.2%;"> CURSO CONCLUIDO</div>
-<?php // else da verificação
-        }else{
-?>
-<form style="float:right;margin:0.5%;" action="add_conclusao" method="POST">
-<input type="hidden" name="id_curso" value=<?=$video['id']?>>
-<button  type='submit'  id="idSubmit" class="btn">
-    Concluir <i class="fas fa-arrow-circle-right"></i>
-</button>
-</form>
-<?php // fim  tag para saber se usuario concluiu o curso
-        }
-?>
-<script>
-// script to timer 
-var tempo = ( <?=$video['tempo']?> *1000) *60;
-$('#idSubmit').hide();
+    </div>
+    <button style="background-color:red; margin:0.5%;" class="btn">
+        <a style="color:#FFF; text-decoration:none;" href="home"><i class="fas fa-arrow-circle-left"></i> Voltar</a>
+    </button>
 
-setTimeout(function(){ 
-    $('#idSubmit').show();
-}, tempo );
 
-</script>
+    <?php // tag para buscar se usuario já concluiu o curso
+    require_once("model/usuario_dao.php");
+    $conclusao = $usuario->buscar_conclusao($_SESSION['matricula'], $video['id']);
+    if ($conclusao != null) {
+    ?>
+        <div style="color:green;float:right;margin:1.2%;"> CURSO CONCLUIDO</div>
+    <?php // else da verificação
+    } else {
+    ?>
+        <form style="float:right;margin:0.5%;" action="parabens" method="POST">
+            <input type="hidden" name="id_curso" value=<?= $video['id'] ?>>
+            <input type="hidden" name="acao" value="concluir">
+            <button type='submit' id="idSubmit" class="btn">
+                Continuar <i class="fas fa-arrow-circle-right"></i>
+            </button>
+        </form>
+    <?php // fim  tag para saber se usuario concluiu o curso
+    }
+    ?>
+    <script>
+        // script to timer 
+        var tempo = (<?= $video['tempo'] ?> * 1000) * 60;
+        $('#idSubmit').hide();
+
+        setTimeout(function() {
+            $('#idSubmit').show();
+        }, tempo);
+
+        const noContext = document.getElementById('noContextMenu');
+
+        noContext.addEventListener('contextmenu', e => {
+            e.preventDefault();
+        });
+
+        
+    </script>
 
 </body>
+
 </html>

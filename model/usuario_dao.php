@@ -1,133 +1,147 @@
 <?php
-require_once('controler/conexao.php');
+
+use JetBrains\PhpStorm\Internal\ReturnTypeContract;
+
+require_once('controler/PDO_CON.php');
 
 // inicio da classe usuario
-class Usuario{
- 
- private $conn;
- public function __construct ($conn){
-    $this ->conn = $conn;// passagem da conexão pelo parametro do contrutor 
-}// fim construtor 
+class Usuario
+{
 
-public function adicionar_usuario($nome,$login,$senha,$setor){
-    
-    $result_usuario = "INSERT INTO usuario (nome,login,senha,created,setorusuario) VALUES ('$nome','$login','$senha',now(),'$setor')";
-    mysqli_query($this->conn,$result_usuario);
+    private $PDO;
+    public function __construct($PDO)
+    {
+        $this->PDO = $PDO; // passagem da conexão pelo parametro do contrutor 
 
-   header('Location:index?valor="sucess"');
-}// fim funçõo adicionar registro
-public function buscar_usuario(){
-    
-    $result_usuario = "SELECT * FROM usuario";
-    $result_bd = $this->conn->query($result_usuario);
-    $lista = mysqli_fetch_all($result_bd);
-    return $lista;
-   
-}// fim funçõo Buscar Todos
-
-public function Alterar_senha($parametro, $idusuario){
-//echo "<pre>"; print_r($parametro); exit;
-    $result_usuario = "UPDATE usuario SET senha = '$parametro' WHERE id = '$idusuario'";
-//    echo "<pre>"; print_r($result_usuario); exit;
-    $result_bd = $this->conn->query($result_usuario);
-   //header('Location:novo_registro.php');
-}// fim funçõo Buscar Por Titulo
+    } // fim construtor 
 
 
-public function apagar_registro($parametro,$url){
-    //echo "<pre>"; print_r($parametro); exit;
-    //    echo "<pre>"; print_r($result_usuario); exit;
-    $result_usuario = "DELETE FROM usuario WHERE id = '$parametro'";
-    mysqli_query($this->conn,$result_usuario);
-    header("Location:$url");
-    }// fim funçõo Buscar Por Titulo
+
+    public function buscar_usuario_adm() //pdo
+    {
+        $sql = "SELECT * FROM permissao_adm";
+        $result = $this->PDO->query($sql);
+        $rows = $result->fetchAll();
+        return $rows;
+    } // fim busca os usuarios com permissão adm 
 
 
-    public function buscar_usuario_adm(){
-    
-        $result_usuario = "SELECT * FROM permissao_adm";
-        $result_bd = $this->conn->query($result_usuario);
-        $lista = mysqli_fetch_all($result_bd);
-        return $lista;
-       
-    }// fim busca os usuarios com permissão adm 
 
-    public function adicionar_conclusao($matricula,$idcurso,$setusuario){
-       
-        $result_usuario = "INSERT INTO concluido (matricula_usuario,id_curso,set_usuario,created) VALUES ('$matricula','$idcurso','$setusuario',now())";
-        mysqli_query($this->conn,$result_usuario);
-    
-      header('Location:parabens?valor="sucess"');
-    }// fim funçõo adicionar registro
+    public function adicionar_conclusao($idcurso) //pdo
+    {
+        $matricula = $_SESSION['matricula'];
+        $setusuario = $_SESSION['set_usuario'];
 
-    public function buscar_conclusao($matricula,$idcurso ){
-       
-        $result_usuario = "SELECT * FROM concluido where matricula_usuario = '$matricula' and id_curso = '$idcurso' ";
-        $result_bd = $this->conn->query($result_usuario);
-        $lista = mysqli_fetch_row($result_bd);
-        
-        return $lista;
-       
-       }// fim funçõo Buscar conclusao matricula
+        $sql = "INSERT INTO concluido (matricula_usuario,id_curso,set_usuario,created) VALUES(:matricula,:idcurso,:setor, now())";
+        $stmt = $this->PDO->prepare($sql);
+        $stmt->bindParam(':idcurso', $idcurso);
+        $stmt->bindParam(':matricula', $matricula);
+        $stmt->bindParam(':setor', $setusuario);
 
-       public function buscar_conclusoes($idcurso ){
-       
-        $result_usuario = "SELECT * FROM concluido where id_curso = '$idcurso' ";
-        $result_bd = $this->conn->query($result_usuario);
-        $lista = mysqli_fetch_all($result_bd);
-        return $lista;
-       
-       }// fim funçõo Buscar conclusao matricula
-       
-       public function buscar_nome_usuario($matricula){
+        $result = $stmt->execute();
+
+        if (!$result) {
+            var_dump($stmt->errorInfo());
+            exit;
+        }
+        return true;
+    } // fim funçõo adicionar registro
+
+
+
+    public function adicionar_avaliacao($avaliacao, $idcurso) //pdo
+    {
+        $matricula = $_SESSION['matricula'];
+
+        $sql = "UPDATE concluido SET avaliacao = :avaliacao where  id_curso = :idcurso and matricula_usuario = :matricula";
+        $stmt = $this->PDO->prepare($sql);
+        $stmt->bindParam(':avaliacao', $avaliacao);
+        $stmt->bindParam(':matricula', $matricula);
+        $stmt->bindParam(':idcurso', $idcurso);
+
+        $result = $stmt->execute();
+
+        if (!$result) {
+            var_dump($stmt->errorInfo());
+            exit;
+        }
+
+        return true;
+    } //  fim adicionar avaliacao 
+
+
+
+    public function buscar_conclusao($matricula, $idcurso) //pdo
+    {
+        $sql = "SELECT * FROM concluido where matricula_usuario = '" . $matricula . "' and id_curso = '" . $idcurso . "' ";
+        $result = $this->PDO->query($sql);
+        $rows = $result->fetch();
+        return $rows;
+    } // fim funçõo Buscar conclusao matricula
+
+
+
+    public function buscar_conclusoes($idcurso) //pdo
+    {
+        $sql = "SELECT * FROM concluido where id_curso = '" . $idcurso . "' ";
+        $result = $this->PDO->query($sql);
+        $rows = $result->fetchAll();
+        return $rows;
+    } // fim funçõo Buscar conclusao matricula
+
+
+
+    public function buscar_nome_usuario($matricula) // api
+    {
         require_once './ROTAS/curl.php';
-        $url = "url da api com parametros";
-                $params = "" ;
-                $tipo = 'GET';
-                $autenticado = curl($url, $params, $tipo);
-                return  $autenticado[$matricula];
-       }// fim funçõo Buscar nome usuario pela matricula
+        $url = "DIGITE AQUI A URL DA API";
+        $params = "";
+        $tipo = 'GET';
+        $autenticado = curl($url, $params, $tipo);
+        return  $autenticado[$matricula];
+    } // fim funçõo Buscar nome usuario pela matricula
 
-       public function login( $usuario, $senha ){
 
-            require_once './ROTAS/curl.php';
 
-            $url = "url da api com parametros";
+    public function login($usuario, $senha) // api
+    {
 
-            $params = array('senha' => $senha);
-            
-            $tipo = 'POST';
-
-            //echo "<pre>"; print_r("teste"); exit;
-
-            $resposta = curl($url, $params, $tipo);
-            
-            if($resposta['msg'] == 'autenticado'){
-                $url = "url da api com parametros";
-                $params = "" ;
-                $tipo = 'GET';
-                $autenticado = curl($url, $params, $tipo);
-
-                return  $autenticado[$usuario];
-                // echo "<pre>"; print_r($autenticado); exit;
-            }else{
-
-                return null;
-
-            }
-
-            //echo "<pre>"; print_r($resposta); exit;
-       }// fim login
-
-       function buscar_todos_usuarios (){
         require_once './ROTAS/curl.php';
-        $url = ' url da api com parametros';
+
+        $url = "DIGITE AQUI A URL DA API";
+
+        $params = array('senha' => $senha);
+
+        $tipo = 'POST';
+
+        $resposta = curl($url, $params, $tipo);
+
+        if ($resposta['msg'] == 'autenticado') {
+            $url = "DIGITE AQUI A URL DA API";
+            $params = "";
+            $tipo = 'GET';
+            $autenticado = curl($url, $params, $tipo);
+
+            return  $autenticado[$usuario];
+        } else {
+
+            return null;
+        }
+    } // fim login
+
+
+
+    function buscar_todos_usuarios() // api
+    {
+        require_once './ROTAS/curl.php';
+        $url = "DIGITE AQUI A URL DA API";
         $params = "";
         $tipo = 'GET';
         $resposta = curl($url, $params, $tipo);
         return $resposta;
-       }
+    }
+} // fim classe usuario
 
-}// fim classe usuario
 
-$usuario = new Usuario($conn);// instância do objeto usuario
+
+$usuario = new Usuario($PDO);// instância do objeto usuario
